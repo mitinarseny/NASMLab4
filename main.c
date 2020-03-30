@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 int16_t c(int8_t A[16]) {
     int16_t sm = 0;
@@ -6,7 +7,7 @@ int16_t c(int8_t A[16]) {
     for (int i = 0; i < 16; i++) {
         if (A[i] <= -8)
             continue;
-        sm += A[i];
+        sm += abs(A[i]);
     }
 
     return sm;
@@ -22,13 +23,17 @@ int16_t f(int8_t A[16]) {
         "cmp $-8, %%al\n\t"
         "jle 2f\n\t"
         "cbw\n\t"
+        "mov %%ax, %%dx\n\t"
+        "sar $31, %%dx\n\t"
+        "xor %%dx, %%ax\n\t"
+        "sub %%dx, %%ax\n\t"
         "add %%ax, %[sm]\n\t"
         "2:\n\t"
         "inc %[A]\n"
         "loop 1b"
     : [sm] "=b" (sm)
     : [A] "S" (A)
-    : "ecx", "ax"
+    : "ecx", "ax", "dx"
     );
      return sm;
 }
