@@ -1,20 +1,36 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int16_t c(int8_t A[16]) {
+void c(int8_t A[16]) {
     int16_t sm = 0;
+    int8_t count = 0;
+    int8_t B[16];
+    int8_t C[16];
 
-    for (int i = 0; i < 16; i++) {
+    for (int8_t i = 0; i < 16; i++) {
         if (A[i] <= -8)
             continue;
         sm += abs(A[i]);
+        B[count] = A[i];
+        C[count] = i;
+        count++;
     }
 
-    return sm;
+    printf("SUM: %d\n\t\tB: [", sm);
+    for (int i = 0; i < count; i++)
+        printf("%4d ", B[i]);
+    printf("]\n\t\tC: [");
+    for (int i = 0; i < count; i++)
+        printf("%4d ", C[i]);
+    printf("]\n");
 }
 
-int16_t f(int8_t A[16]) {
+void f(int8_t A[16]) {
     int16_t sm = 0;
+    int8_t count = 0;
+    int8_t B[16];
+    int8_t C[16];
+
     __asm__ (
         "xor %[sm], %[sm]\n\t"
         "mov $16, %%ecx\n"
@@ -32,10 +48,18 @@ int16_t f(int8_t A[16]) {
         "inc %[A]\n"
         "loop 1b"
     : [sm] "=b" (sm)
-    : [A] "S" (A)
+    : [A] "S" (A),
+    [B] "D" (B)
     : "ecx", "ax", "dx"
     );
-     return sm;
+    
+    printf("SUM: %d\n\t\tB: [", sm);
+    for (int i = 0; i < count; i++)
+        printf("%4d ", B[i]);
+    printf("]\n\t\tC: [");
+    for (int i = 0; i < count; i++)
+        printf("%4d ", C[i]);
+    printf("]\n");
 }
 
 int main() {
@@ -50,6 +74,9 @@ int main() {
         printf("#%d:\n\tA: [", i);
         for (int j = 0; j < sizeof (*AA) / sizeof (**AA); j++)
             printf("%4d ", AA[i][j]);
-        printf("]\n\tSUM: %d (c: %d)\n", f(AA[i]), c(AA[i]));
+        printf("]\n\tC:\n\t\t");
+        c(AA[i]);
+        printf("\tASM:\n\t\t");
+        f(AA[i]);
     }
 }
