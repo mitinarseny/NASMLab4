@@ -33,34 +33,38 @@ void f(int8_t A[16]) {
    
     __asm__ (
         "xor %[sm], %[sm]\n\t"       // sum <- 0
-        "xor %[count], %[count]\n" // count <- 0
+        "xor %[count], %[count]\n"   // count <- 0
+        "xor %%cl, %%cl\n"           // i <- 0
+
         "1:\n\t"                     // loop: iterate over A
         "mov (%[A]), %%al\n\t"       // AL <- A[i]
         "cmp $-8, %%al\n\t"          // if (A[i] <= -8)
         "jle 2f\n\t"                 // continue
-        "mov %%al, (%[B])\n\t"
-        "mov %%cl, (%[C])\n\t"
+        "mov %%al, (%[B])\n\t"       // B[count] <- A[i]
+        "mov %%cl, (%[C])\n\t"       // C[count] <- i
         "cbw\n\t"                    // AL -> AX
         "mov %%ax, %%dx\n\t"         // DX <- AX               -|
         "sar $31, %%dx\n\t"          // DX <- sign bit of A[i]  |
         "xor %%dx, %%ax\n\t"         // AX <- AX xor DX         |--> abs(A[i])
         "sub %%dx, %%ax\n\t"         // AX <- DX - AX          -|
         "add %%ax, %[sm]\n\t"        // sum += abs(A[i])
-        "inc %[count]\n\t"             // count += 1
-        "inc %[B]\n\t"
-        "inc %[C]\n"
+        "inc %[count]\n\t"           // count += 1
+        "inc %[B]\n\t"               // next B
+        "inc %[C]\n"                 // next C
+
         "2:\n\t"
-        "inc %[A]\n\t"              // i += 1
-        "loop 1b\n"                    //   goto 1
+        "inc %[A]\n\t"
+        "inc %%cl\n\t"
+        "cmp $16, %%cl\n\t"           
+        "jl 1b\n"
     : [sm] "=b" (sm),
     [count] "=r" (count)
-    : [size] "c" (16),
-    [A] "S" (A),
+    : [A] "S" (A),
     [B] "D" (B),
     [C] "r" (C)
-    : "ax", "dx"
+    : "ax", "dx", "cl"
     );
-    
+    printf("A: 0x%X, B: 0x%X, C: 0x%X\n\t\t", A, B, C);
     printf("COUNT: %d\n\t\tSUM: %d\n\t\tB: [", count, sm);
     for (int i = 0; i < count; i++)
         printf("%4d ", B[i]);
