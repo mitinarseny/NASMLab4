@@ -53,10 +53,10 @@ void f(int8_t A[16]) {
         "inc %[C]\n"                 // next C
 
         "2:\n\t"
-        "inc %[A]\n\t"
-        "inc %%cl\n\t"
-        "cmp $16, %%cl\n\t"           
-        "jl 1b\n"
+        "inc %[A]\n\t"               // next A
+        "inc %%cl\n\t"               // i += 1
+        "cmp $16, %%cl\n\t"          // if (i < 16)
+        "jl 1b\n"                    //   goto 1
     : [sm] "=b" (sm),
     [count] "=r" (count)
     : [A] "S" (A),
@@ -64,7 +64,7 @@ void f(int8_t A[16]) {
     [C] "r" (C)
     : "ax", "dx", "cl"
     );
-    printf("A: 0x%X, B: 0x%X, C: 0x%X\n\t\t", A, B, C);
+    
     printf("COUNT: %d\n\t\tSUM: %d\n\t\tB: [", count, sm);
     for (int i = 0; i < count; i++)
         printf("%4d ", B[i]);
