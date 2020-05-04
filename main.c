@@ -5,14 +5,14 @@ void c(int8_t A[16]) {
     int16_t sm = 0;
     int8_t count = 0;
     int8_t B[16];
-    int8_t C[16];
+    int8_t* C[16];
 
-    for (int8_t i = 0; i < 16; i++) {
+    for (size_t i = 0; i < 16; i++) {
         if (A[i] <= -8)
             continue;
         sm += abs(A[i]);
         B[count] = A[i];
-        C[count] = i;
+        C[count] = A + i;
         count++;
     }
 
@@ -21,7 +21,7 @@ void c(int8_t A[16]) {
         printf("%4d ", B[i]);
     printf("]\n\t\tC: [");
     for (int i = 0; i < count; i++)
-        printf("%4d ", C[i]);
+        printf("0x%08X\n\t\t    ", C[i]);
     printf("]\n");
 }
 
@@ -29,19 +29,17 @@ void f(int8_t A[16]) {
     int16_t sm = 0;
     int8_t count = 0;
     int8_t B[16] = {0};
-    int8_t C[16] = {0};
+    int8_t* C[16] = {0};
    
     __asm__ (
-        "xor %[sm], %[sm]\n\t"       // sum <- 0
-        "xor %[count], %[count]\n"   // count <- 0
         "xor %%cl, %%cl\n"           // i <- 0
 
         "1:\n\t"                     // loop: iterate over A
         "mov (%[A]), %%al\n\t"       // AL <- A[i]
-        "cmp $-8, %%al\n\t"          // if (A[i] <= -8)
+        "cmp $-8, %%al\n\t"          // if :w(A[i] <= -8)
         "jle 2f\n\t"                 // continue
         "mov %%al, (%[B])\n\t"       // B[count] <- A[i]
-        "mov %%cl, (%[C])\n\t"       // C[count] <- i
+        "movq %[A], (%[C])\n\t"       // C[count] <- A + i
         "cbw\n\t"                    // AL -> AX
         "mov %%ax, %%dx\n\t"         // DX <- AX               -|
         "sar $31, %%dx\n\t"          // DX <- sign bit of A[i]  |
@@ -50,18 +48,18 @@ void f(int8_t A[16]) {
         "add %%ax, %[sm]\n\t"        // sum += abs(A[i])
         "inc %[count]\n\t"           // count += 1
         "inc %[B]\n\t"               // next B
-        "inc %[C]\n"                 // next C
+        "add $8, %[C]\n"             // next C
 
         "2:\n\t"
         "inc %[A]\n\t"               // next A
         "inc %%cl\n\t"               // i += 1
         "cmp $16, %%cl\n\t"          // if (i < 16)
         "jl 1b\n"                    //   goto 1
-    : [sm] "=b" (sm),
-    [count] "=r" (count)
+    : [sm] "+r" (sm),
+    [count] "+r" (count)
     : [A] "S" (A),
     [B] "D" (B),
-    [C] "r" (C)
+    [C] "b" (C)
     : "ax", "dx", "cl"
     );
     
@@ -70,8 +68,8 @@ void f(int8_t A[16]) {
         printf("%4d ", B[i]);
     printf("]\n\t\tC: [");
     for (int i = 0; i < count; i++)
-        printf("%4d ", C[i]);
-    printf("]\n\t\t");
+        printf("0x%08X\n\t\t    ", C[i]);
+    printf("]\n");
 }
 
 int main() {
